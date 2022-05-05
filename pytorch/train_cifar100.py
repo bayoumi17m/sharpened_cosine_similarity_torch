@@ -99,7 +99,7 @@ model_gen = network_gen.get(args.model)
 ########## Data ##########
 
 training_set = CIFAR100(
-    root=os.path.join('.', 'data', 'CIFAR10'),
+    root=os.path.join('.', 'data', 'CIFAR100'),
     train=True,
     download=True,
     transform=transforms.Compose([
@@ -108,7 +108,7 @@ training_set = CIFAR100(
         transforms.ToTensor()
     ]))
 testing_set = CIFAR100(
-    root=os.path.join('.', 'data', 'CIFAR10'),
+    root=os.path.join('.', 'data', 'CIFAR100'),
     train=False,
     download=True,
     transform=transforms.Compose([transforms.ToTensor()]))
