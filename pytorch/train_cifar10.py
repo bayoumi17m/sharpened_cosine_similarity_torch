@@ -75,6 +75,9 @@ def gen_densenet_no_act():
 def gen_densenet_no_norm():
     return DenseNet(sharpened_cosine_similarity=True, activation = True, normalization = False)
 
+def gen_densenet_no_act_no_norm():
+    return DenseNet(sharpened_cosine_similarity=True, activation = False, normalization = False)
+
 def gen_demo_network():
     return DemoNetwork()
 
@@ -89,6 +92,7 @@ network_gen = {
     "densenet_base": gen_densenet_base,
     "densenet_no_act": gen_densenet_no_act,
     "densenet_no_norm": gen_densenet_no_norm,
+    "densenet_no_act_no_norm": gen_densenet_no_act_no_norm,
     "demo": gen_demo_network,
     "resnet": gen_resnet_model,
     "resnet_scs": gen_resnet_scs
