@@ -22,8 +22,6 @@ from demo_network import DemoNetwork
 from vgg import *
 import argparse
 
-torch.autograd.set_detect_anomaly(True)
-
 ########## Hyper Parameters ##########
 
 batch_size = 64
@@ -113,7 +111,7 @@ testing_loader = DataLoader(
 network = model_gen().to(device)
 print(f"Training: {args.model}")
 
-optimizer = optim.Adam(network.parameters(), lr= 3e-4, weight_decay = 5e-4)
+optimizer = optim.SGD(network.parameters(), lr=3e-4, momentum=0.9, weight_decay=5e-4)
 
 path = 'logs/' + args.model + '/' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 createdirs(path)
