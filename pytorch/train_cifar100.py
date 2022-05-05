@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.utils.data import DataLoader
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import CIFAR100
 import torchvision.transforms as transforms
 from tqdm import tqdm
 
@@ -63,10 +63,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 ########## Model Definitions ##########
 
-def gen_densenet_scs():
+def gen_densenet_model():
     return DenseNet(sharpened_cosine_similarity=True, activation = True, normalization =True)
 
-def gen_densenet_base():
+def gen_densenet_scs():
     return DenseNet(sharpened_cosine_similarity=False, activation = True, normalization = True)
 
 def gen_densenet_no_act():
@@ -85,8 +85,8 @@ def gen_resnet_scs():
     return ResNet(BasicBlock, [2, 2, 2, 2], scs = True)
 
 network_gen = {
-    "densenet": gen_densenet_scs,
-    "densenet_base": gen_densenet_base,
+    "densenet": gen_densenet_model,
+    "densenet_scs": gen_densenet_scs,
     "densenet_no_act": gen_densenet_no_act,
     "densenet_no_norm": gen_densenet_no_norm,
     "demo": gen_demo_network,
@@ -98,7 +98,7 @@ model_gen = network_gen.get(args.model)
 
 ########## Data ##########
 
-training_set = CIFAR10(
+training_set = CIFAR100(
     root=os.path.join('.', 'data', 'CIFAR10'),
     train=True,
     download=True,
@@ -107,7 +107,7 @@ training_set = CIFAR10(
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor()
     ]))
-testing_set = CIFAR10(
+testing_set = CIFAR100(
     root=os.path.join('.', 'data', 'CIFAR10'),
     train=False,
     download=True,
