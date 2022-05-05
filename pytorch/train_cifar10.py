@@ -22,6 +22,8 @@ from demo_network import DemoNetwork
 from vgg import *
 import argparse
 
+torch.autograd.set_detect_anomaly(True)
+
 ########## Hyper Parameters ##########
 
 batch_size = 64
@@ -68,7 +70,8 @@ def gen_demo_network():
 network_gen = {
     "densenet": gen_densenet_model,
     "demo": gen_demo_network,
-    "vgg": vgg11_bn,
+    "vgg": vgg11,
+    "vgg11_scs_bn_act_do": vgg11_scs_bn_act_do,
 }
 
 model_gen = network_gen.get(args.model)

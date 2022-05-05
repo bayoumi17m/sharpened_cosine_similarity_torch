@@ -5,18 +5,13 @@ import math
 
 import torch.nn as nn
 import torch.nn.init as init
-
-__all__ = [
-    'VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn',
-    'vgg19_bn', 'vgg19',
-]
-
+from sharpened_cosine_similarity import SharpenedCosineSimilarity
 
 class VGG(nn.Module):
     '''
     VGG model
     '''
-    def __init__(self, features):
+    def __init__(self, features, init_weights=True):
         super(VGG, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
@@ -30,7 +25,7 @@ class VGG(nn.Module):
         )
          # Initialize weights
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv2d) and init_weights:
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
                 m.bias.data.zero_()
@@ -58,6 +53,26 @@ def make_layers(cfg, batch_norm=False):
             in_channels = v
     return nn.Sequential(*layers)
 
+def make_scs_layers(cfg, batch_norm=False):
+    layers = []
+    in_channels = 3
+    for v in cfg:
+        if v == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        else:
+            conv2d = SharpenedCosineSimilarity(
+                in_channels=in_channels,
+                out_channels=v,
+                kernel_size=3,
+                padding=1
+            )
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = v
+    return nn.Sequential(*layers)
+
 
 cfg = {
     'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
@@ -67,42 +82,21 @@ cfg = {
           512, 512, 512, 512, 'M'],
 }
 
-
 def vgg11():
-    """VGG 11-layer model (configuration "A")"""
-    return VGG(make_layers(cfg['A']))
+    """
+    VGG 11-layer model (configuration "A") with:
+    - Standard conv
+    - dropout
+    - relu activation
+    - batch norm
+    """
+    return VGG(make_layers(cfg['A'], batch_norm=True), init_weights=True)
 
-
-def vgg11_bn():
-    """VGG 11-layer model (configuration "A") with batch normalization"""
-    return VGG(make_layers(cfg['A'], batch_norm=True))
-
-
-def vgg13():
-    """VGG 13-layer model (configuration "B")"""
-    return VGG(make_layers(cfg['B']))
-
-
-def vgg13_bn():
-    """VGG 13-layer model (configuration "B") with batch normalization"""
-    return VGG(make_layers(cfg['B'], batch_norm=True))
-
-
-def vgg16():
-    """VGG 16-layer model (configuration "D")"""
-    return VGG(make_layers(cfg['D']))
-
-
-def vgg16_bn():
-    """VGG 16-layer model (configuration "D") with batch normalization"""
-    return VGG(make_layers(cfg['D'], batch_norm=True))
-
-
-def vgg19():
-    """VGG 19-layer model (configuration "E")"""
-    return VGG(make_layers(cfg['E']))
-
-
-def vgg19_bn():
-    """VGG 19-layer model (configuration 'E') with batch normalization"""
-    return VGG(make_layers(cfg['E'], batch_norm=True))
+def vgg11_scs_bn_act_do():
+    """
+    - SCS conv
+    - dropout
+    - batch norm
+    - relu activation
+    """
+    return VGG(make_scs_layers(cfg['A'], batch_norm=True), init_weights=False)
