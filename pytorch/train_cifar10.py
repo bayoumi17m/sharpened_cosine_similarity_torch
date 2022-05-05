@@ -19,13 +19,13 @@ from sharpened_cosine_similarity import SharpenedCosineSimilarity
 
 from densenet import DenseNet
 from demo_network import DemoNetwork
+from vgg import *
 import argparse
 
 ########## Hyper Parameters ##########
 
 batch_size = 64
-n_epochs = 2
-max_lr = .05
+n_epochs = 100
 
 ########## Setup ##########
 
@@ -68,11 +68,14 @@ def gen_demo_network():
 network_gen = {
     "densenet": gen_densenet_model,
     "demo": gen_demo_network,
+    "vgg": vgg11_bn,
 }
 
 model_gen = network_gen.get(args.model)
 
 ########## Data ##########
+
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 training_set = CIFAR10(
     root=os.path.join('.', 'data', 'CIFAR10'),
@@ -81,13 +84,17 @@ training_set = CIFAR10(
     transform=transforms.Compose([
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        normalize
     ]))
 testing_set = CIFAR10(
     root=os.path.join('.', 'data', 'CIFAR10'),
     train=False,
     download=True,
-    transform=transforms.Compose([transforms.ToTensor()]))
+    transform=transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ]))
 
 training_loader = DataLoader(
     training_set,
@@ -103,7 +110,7 @@ testing_loader = DataLoader(
 network = model_gen().to(device)
 print(f"Training: {args.model}")
 
-optimizer = optim.Adam(network.parameters(), lr=max_lr)
+optimizer = optim.Adam(network.parameters(), lr= 3e-4, weight_decay = 5e-4)
 
 path = 'logs/' + args.model + '/' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 createdirs(path)
@@ -111,12 +118,6 @@ log_file = open(path + '.log', 'w+')
 
 
 steps_per_epoch = len(training_loader)
-
-scheduler = OneCycleLR(
-    optimizer,
-    max_lr=max_lr,
-    steps_per_epoch=steps_per_epoch,
-    epochs=n_epochs)
 
 for i_epoch in range(n_epochs):
     epoch_start_time = time.time()
@@ -136,7 +137,6 @@ for i_epoch in range(n_epochs):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            scheduler.step()
 
             epoch_training_loss += loss.item() * training_loader.batch_size
             epoch_training_num_correct += (preds.argmax(dim=1).eq(labels).sum().item())
