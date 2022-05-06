@@ -6,6 +6,7 @@ import math
 import torch.nn as nn
 import torch.nn.init as init
 from sharpened_cosine_similarity import SharpenedCosineSimilarity
+from absolute_pooling import MaxAbsPool2d
 
 class VGG(nn.Module):
     '''
@@ -37,6 +38,34 @@ class VGG(nn.Module):
         x = self.classifier(x)
         return x
 
+class VGGNoDropoutConv(nn.Module):
+    '''
+    VGG model
+    '''
+    def __init__(self, features, init_weights=True):
+        super(VGGNoDropoutConv, self).__init__()
+        self.features = features
+        self.classifier = nn.Sequential(
+            nn.Linear(512, 512),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(512, 512),
+            nn.ReLU(True),
+            nn.Linear(512, 10),
+        )
+         # Initialize weights
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) and init_weights:
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.bias.data.zero_()
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+        return x
 
 def make_layers(cfg, batch_norm=False):
     layers = []
@@ -53,12 +82,15 @@ def make_layers(cfg, batch_norm=False):
             in_channels = v
     return nn.Sequential(*layers)
 
-def make_scs_layers(cfg, batch_norm=False, use_relu=True):
+def make_scs_layers(cfg, batch_norm=False, use_relu=True, abspool=False):
     layers = []
     in_channels = 3
     for v in cfg:
         if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+            if abspool:
+                layers += [MaxAbsPool2d(kernel_size=2, stride=2)]
+            else:
+                layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
         else:
             conv2d = SharpenedCosineSimilarity(
                 in_channels=in_channels,
@@ -112,3 +144,22 @@ def vgg11_scs_bn_do():
     - batch norm
     """
     return VGG(make_scs_layers(cfg['A'], batch_norm=True, use_relu=False), init_weights=False)
+
+
+def vgg11_scs_bn_act():
+    """
+    - SCS conv
+    - batch norm
+    - relu activation
+    """
+    return VGGNoDropoutConv(make_scs_layers(cfg['A'], batch_norm=True, use_relu=True), init_weights=False)
+
+def vgg11_scs_bn_act_do_abspool():
+    """
+    - SCS conv
+    - dropout
+    - batch norm
+    - relu activation
+    - abs pool
+    """
+    return VGG(make_scs_layers(cfg['A'], batch_norm=True, use_relu=True, abspool=True), init_weights=False)

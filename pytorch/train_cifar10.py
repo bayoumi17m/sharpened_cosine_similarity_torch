@@ -71,6 +71,8 @@ network_gen = {
     "vgg": vgg11,
     "vgg_scs_bn_act_do": vgg11_scs_bn_act_do,
     "vgg_scs_bn_do": vgg11_scs_bn_do,
+    "vgg_scs_bn_act": vgg11_scs_bn_act,
+    "vgg_scs_bn_act_do_abspool": vgg11_scs_bn_act_do_abspool
 }
 
 model_gen = network_gen.get(args.model)
