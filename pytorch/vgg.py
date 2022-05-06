@@ -53,7 +53,7 @@ def make_layers(cfg, batch_norm=False):
             in_channels = v
     return nn.Sequential(*layers)
 
-def make_scs_layers(cfg, batch_norm=False):
+def make_scs_layers(cfg, batch_norm=False, use_relu=True):
     layers = []
     in_channels = 3
     for v in cfg:
@@ -66,10 +66,14 @@ def make_scs_layers(cfg, batch_norm=False):
                 kernel_size=3,
                 padding=1
             )
+            layers += [conv2d]
+
             if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
-            else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
+                layers += [nn.BatchNorm2d(v)]
+
+            if use_relu:
+                layers += [nn.ReLU(inplace=True)]
+
             in_channels = v
     return nn.Sequential(*layers)
 
@@ -90,7 +94,7 @@ def vgg11():
     - relu activation
     - batch norm
     """
-    return VGG(make_layers(cfg['A'], batch_norm=True), init_weights=True)
+    return VGG(make_layers(cfg['A'], batch_norm=True, use_relu=True), init_weights=True)
 
 def vgg11_scs_bn_act_do():
     """
@@ -99,4 +103,12 @@ def vgg11_scs_bn_act_do():
     - batch norm
     - relu activation
     """
-    return VGG(make_scs_layers(cfg['A'], batch_norm=True), init_weights=False)
+    return VGG(make_scs_layers(cfg['A'], batch_norm=True, use_relu=True), init_weights=False)
+
+def vgg11_scs_bn_do():
+    """
+    - SCS conv
+    - dropout
+    - batch norm
+    """
+    return VGG(make_scs_layers(cfg['A'], batch_norm=True, use_relu=False), init_weights=False)
