@@ -69,7 +69,7 @@ network_gen = {
     "densenet": gen_densenet_model,
     "demo": gen_demo_network,
     "vgg": vgg11,
-    "vgg11_scs_bn_act_do": vgg11_scs_bn_act_do,
+    "vgg_scs_bn_act_do": vgg11_scs_bn_act_do,
 }
 
 model_gen = network_gen.get(args.model)
@@ -144,7 +144,7 @@ for i_epoch in range(n_epochs):
 
             tqdm_training_loader.set_description(
                 f'Step: {batch_idx + 1}/{steps_per_epoch}, '
-                f'Epoch: {i_epoch + 1}/{n_epochs}, '
+                f'Epoch: {i_epoch}/{n_epochs - 1}, '
             )
 
     epoch_duration = time.time() - epoch_start_time
