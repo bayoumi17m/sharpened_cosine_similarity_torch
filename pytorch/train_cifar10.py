@@ -70,7 +70,7 @@ def gen_densenet_base():
     return DenseNet(sharpened_cosine_similarity=False, activation = True, normalization = True)
 
 def gen_densenet_no_act():
-    return DenseNet(sharpened_cosine_similarity=True, activation = False, normalization = False)
+    return DenseNet(sharpened_cosine_similarity=True, activation = False, normalization = True)
 
 def gen_densenet_no_norm():
     return DenseNet(sharpened_cosine_similarity=True, activation = True, normalization = False)
