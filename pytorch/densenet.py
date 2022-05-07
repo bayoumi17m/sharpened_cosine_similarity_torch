@@ -12,12 +12,13 @@ from sharpened_cosine_similarity import SharpCosSim2d
 
 
 class _DenseLayer(nn.Module):
-    def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, sharpened_cosine_similarity, activation, normalization, memory_efficient=False,
+    def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, sharpened_cosine_similarity, activation, normalization, abs_pool, memory_efficient=False,
         ):
         super(_DenseLayer, self).__init__()
         self.sharpened_cosine_similarity = sharpened_cosine_similarity
         self.activation = activation
         self.normalization = normalization
+        self.abs_pool = abs_pool
         if self.normalization:
             self.add_module('norm1', nn.BatchNorm2d(num_input_features))
         if self.activation:
@@ -124,7 +125,7 @@ class _DenseLayer(nn.Module):
 class _DenseBlock(nn.ModuleDict):
     _version = 2
 
-    def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, sharpened_cosine_similarity, activation, normalization, memory_efficient=False):
+    def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, sharpened_cosine_similarity, activation, normalization, abs_pool, memory_efficient=False):
         super(_DenseBlock, self).__init__()
         for i in range(num_layers):
             layer = _DenseLayer(
@@ -135,7 +136,8 @@ class _DenseBlock(nn.ModuleDict):
                 memory_efficient=memory_efficient,
                 sharpened_cosine_similarity=sharpened_cosine_similarity, 
                 activation = activation, 
-                normalization = normalization
+                normalization = normalization,
+                abs_pool = abs_pool
             )
             self.add_module('denselayer%d' % (i + 1), layer)
 
@@ -181,7 +183,7 @@ class DenseNet(nn.Module):
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
 
-    def __init__(self, sharpened_cosine_similarity = False, activation = True, normalization = True, growth_rate=32, block_config=(6, 12, 24, 16),
+    def __init__(self, sharpened_cosine_similarity = False, activation = True, normalization = True, abs_pool = False, growth_rate=32, block_config=(6, 12, 24, 16),
                  num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
 
         super(DenseNet, self).__init__()
@@ -194,8 +196,7 @@ class DenseNet(nn.Module):
         if sharpened_cosine_similarity:
             f.append(('conv0', SharpCosSim2d(3, num_init_features, kernel_size=7, stride=2, padding=3)))
         else:
-            f.append(('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2,
-                                    padding=3, bias=False)))
+            f.append(('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)))
         
         if normalization:
             f.append(('norm0', nn.BatchNorm2d(num_init_features)))
@@ -203,8 +204,10 @@ class DenseNet(nn.Module):
         if activation:
             f.append(('relu0', nn.ReLU(inplace=True)))
         
-
-        f.append(('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)))
+        if abs_pool:
+            f.append(('pool0', MaxAbsPool2d(kernel_size=3, stride=2, padding=1)))
+        else: 
+            f.append(('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)))
     
         self.features = nn.Sequential(OrderedDict(f))
 
@@ -220,7 +223,8 @@ class DenseNet(nn.Module):
                 memory_efficient=memory_efficient,
                 sharpened_cosine_similarity = sharpened_cosine_similarity,
                 activation = activation,
-                normalization = normalization
+                normalization = normalization,
+                abs_pool = abs_pool
             )
             self.features.add_module('denseblock%d' % (i + 1), block)
             num_features = num_features + num_layers * growth_rate

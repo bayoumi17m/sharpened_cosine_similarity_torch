@@ -66,6 +66,12 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def gen_densenet_scs():
     return DenseNet(sharpened_cosine_similarity=True, activation = True, normalization =True)
 
+def gen_densenet_scs_abs():
+    return DenseNet(sharpened_cosine_similarity=True, activation = True, normalization =True, abs_pool = True)
+
+def gen_densenet_scs_abs_no_act_no_norm():
+    return DenseNet(sharpened_cosine_similarity=True, activation = True, normalization =True, abs_pool = False)
+
 def gen_densenet_base():
     return DenseNet(sharpened_cosine_similarity=False, activation = True, normalization = True)
 
@@ -86,9 +92,11 @@ def gen_resnet_scs():
 
 network_gen = {
     "densenet_scs": gen_densenet_scs,
+    "densenet_scs_abs": gen_densenet_scs_abs,
     "densenet_base": gen_densenet_base,
     "densenet_no_act": gen_densenet_no_act,
     "densenet_no_norm": gen_densenet_no_norm,
+    "densenet_scs_abs_no_act_no_norm": gen_densenet_scs_abs_no_act_no_norm,
     "demo": gen_demo_network,
     "resnet": gen_resnet_model,
     "resnet_scs": gen_resnet_scs
