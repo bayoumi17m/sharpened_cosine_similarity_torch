@@ -73,7 +73,8 @@ network_gen = {
     "vgg_scs_bn_do": vgg_scs_bn_do,
     "vgg_scs_bn_act": vgg_scs_bn_act,
     "vgg_scs_bn_act_do_abspool": vgg_scs_bn_act_do_abspool,
-    "vgg_scs_bn_abspool": vgg_scs_bn_abspool
+    "vgg_scs_bn_abspool": vgg_scs_bn_abspool,
+    "vgg_scs_bn_act_abspool": vgg_scs_bn_act_abspool,
 }
 
 model_gen = network_gen.get(args.model)
