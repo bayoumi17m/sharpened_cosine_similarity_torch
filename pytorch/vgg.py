@@ -118,7 +118,7 @@ cfg = {
           512, 512, 512, 512, 'M'],
 }
 
-def vgg11():
+def vgg():
     """
     VGG 11-layer model (configuration "A") with:
     - Standard conv
@@ -128,7 +128,7 @@ def vgg11():
     """
     return VGG(make_layers(cfg['A'], batch_norm=True, use_relu=True), init_weights=True)
 
-def vgg11_scs_bn_act_do():
+def vgg_scs_bn_act_do():
     """
     - SCS conv
     - dropout
@@ -137,7 +137,7 @@ def vgg11_scs_bn_act_do():
     """
     return VGG(make_scs_layers(cfg['A'], batch_norm=True, use_relu=True), init_weights=False)
 
-def vgg11_scs_bn_do():
+def vgg_scs_bn_do():
     """
     - SCS conv
     - dropout
@@ -146,7 +146,7 @@ def vgg11_scs_bn_do():
     return VGG(make_scs_layers(cfg['A'], batch_norm=True, use_relu=False), init_weights=False)
 
 
-def vgg11_scs_bn_act():
+def vgg_scs_bn_act():
     """
     - SCS conv
     - batch norm
@@ -154,7 +154,7 @@ def vgg11_scs_bn_act():
     """
     return VGGNoDropoutConv(make_scs_layers(cfg['A'], batch_norm=True, use_relu=True), init_weights=False)
 
-def vgg11_scs_bn_act_do_abspool():
+def vgg_scs_bn_act_do_abspool():
     """
     - SCS conv
     - dropout
