@@ -18,6 +18,7 @@ from torch import Tensor
 
 
 from sharpened_cosine_similarity import SharpCosSim2d
+from absolute_pooling import MaxAbsPool2d
 
 
 
@@ -93,11 +94,13 @@ class BasicBlock(nn.Module):
         base_width: int = 64,
         dilation: int = 1,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        activation: bool = True,
+        batch_norm: bool = True,
         scs = False,
     ) -> None:
         super().__init__()
         if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
+            norm_layer = nn.BatchNorm2d if batch_norm else nn.Identity
         if groups != 1 or base_width != 64:
             raise ValueError("BasicBlock only supports groups=1 and base_width=64")
         if dilation > 1:
@@ -107,13 +110,13 @@ class BasicBlock(nn.Module):
             self.conv1 = scs3x3(inplanes, planes, stride)
         else:
             self.conv1 = conv3x3(inplanes, planes, stride)
-        self.bn1 = norm_layer(planes)
-        self.relu = nn.ReLU(inplace=True)
+        self.bn1 = norm_layer(planes) if batch_norm else nn.Identity()
+        self.relu = nn.ReLU(inplace=True) if activation else nn.Identity()
         if scs:
             self.conv2 = scs3x3(planes, planes)
         else:
             self.conv2 = conv3x3(planes, planes)
-        self.bn2 = norm_layer(planes)
+        self.bn2 = norm_layer(planes) if batch_norm else nn.Identity()
         self.downsample = downsample
         self.stride = stride
 
@@ -155,29 +158,31 @@ class Bottleneck(nn.Module):
         base_width: int = 64,
         dilation: int = 1,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        activation: bool = True,
+        batch_norm: bool = True,
         scs = False,
     ) -> None:
         super().__init__()
         if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
+            norm_layer = nn.BatchNorm2d if batch_norm else nn.Identity
         width = int(planes * (base_width / 64.0)) * groups
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
         if scs:
             self.conv1 = scs1x1(inplanes, width)
         else:
             self.conv1 = conv1x1(inplanes, width)
-        self.bn1 = norm_layer(width)
+        self.bn1 = norm_layer(width) if batch_norm else nn.Identity()
         if scs:
             self.conv2 = scs3x3(width, width, stride)
         else:
             self.conv2 = conv3x3(width, width, stride, groups, dilation)
-        self.bn2 = norm_layer(width)
+        self.bn2 = norm_layer(width) if batch_norm else nn.Identity()
         if scs:
             self.conv3 = scs1x1(width, planes * self.expansion)
         else:
             self.conv3 = conv1x1(width, planes * self.expansion)
-        self.bn3 = norm_layer(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
+        self.bn3 = norm_layer(planes * self.expansion) if batch_norm else nn.Identity()
+        self.relu = nn.ReLU(inplace=True) if activation else nn.Identity()
         self.downsample = downsample
         self.stride = stride
 
@@ -214,13 +219,16 @@ class ResNet(nn.Module):
         groups: int = 1,
         width_per_group: int = 64,
         scs = False,
+        max_abs=False,
+        activation = True,
+        batch_norm = True,
         replace_stride_with_dilation: Optional[List[bool]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
         #_log_api_usage_once(self)
         if norm_layer is None:
-            norm_layer = nn.BatchNorm2d
+            norm_layer = nn.BatchNorm2d if batch_norm else nn.Identity
         self._norm_layer = norm_layer
 
         self.inplanes = 64
@@ -243,9 +251,12 @@ class ResNet(nn.Module):
                                         stride = 1)
         else:
             self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
-        self.bn1 = norm_layer(self.inplanes)
-        self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.bn1 = norm_layer(self.inplanes) if batch_norm else nn.Identity()
+        self.relu = nn.ReLU(inplace=True) if activation else nn.Identity()
+        if max_abs:
+            self.maxpool = MaxAbsPool2d(kernel_size=3, stride=2, padding=1)
+        else:
+            self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0], scs = scs)
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2, dilate=replace_stride_with_dilation[0], scs = scs)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2, dilate=replace_stride_with_dilation[1], scs = scs)
@@ -278,6 +289,8 @@ class ResNet(nn.Module):
         stride: int = 1,
         dilate: bool = False,
         scs = False,
+        activation = True,
+        batch_norm = True,
     ) -> nn.Sequential:
         norm_layer = self._norm_layer
         downsample = None
@@ -300,7 +313,7 @@ class ResNet(nn.Module):
         layers = []
         layers.append(
             block(
-                self.inplanes, planes, stride, downsample, self.groups, self.base_width, previous_dilation, norm_layer, scs
+                self.inplanes, planes, stride, downsample, self.groups, self.base_width, previous_dilation, norm_layer, scs=scs, activation=activation, batch_norm=batch_norm,
             )
         )
         self.inplanes = planes * block.expansion
@@ -313,6 +326,9 @@ class ResNet(nn.Module):
                     base_width=self.base_width,
                     dilation=self.dilation,
                     norm_layer=norm_layer,
+                    scs=scs,
+                    activation=activation,
+                    batch_norm=batch_norm,
                 )
             )
 

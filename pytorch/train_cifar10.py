@@ -28,7 +28,7 @@ import errno
 ########## Hyper Parameters ##########
 
 batch_size = 64
-n_epochs = 2
+n_epochs = 100
 max_lr = .05
 
 ########## Setup ##########
@@ -79,10 +79,28 @@ def gen_demo_network():
     return DemoNetwork()
 
 def gen_resnet_model():
-    return ResNet(BasicBlock, [2, 2, 2, 2])
+    return ResNet(BasicBlock, [3, 4, 6, 3])
 
 def gen_resnet_scs():
-    return ResNet(BasicBlock, [2, 2, 2, 2], scs = True)
+    return ResNet(BasicBlock, [3, 4, 6, 3], scs = True)
+
+def gen_resnet_no_act():
+    return ResNet(BasicBlock, [3, 4, 6, 3], scs=True, activation= False)
+
+def gen_resnet_no_norm():
+    return ResNet(BasicBlock, [3, 4, 6, 3], scs=True, activation=True, batch_norm = False)
+
+def gen_resnet_no_act_norm():
+    return ResNet(BasicBlock, [3, 4, 6, 3], scs=True, activation=False, batch_norm=False,)
+
+def gen_resnet_no_act_norm_abs_pool():
+    return ResNet(BasicBlock, [3, 4, 6, 3], scs=True, activation=False, batch_norm=False, max_abs=True)
+
+def gen_resnet_scs_abs():
+    return ResNet(BasicBlock, [3, 4, 6, 3], scs=True, activation=True, batch_norm=True, max_abs=True)
+
+def gen_resnet_scs_abs_no_act():
+    return ResNet(BasicBlock, [3, 4, 6, 3], scs=True, activation=False, batch_norm=True, max_abs=True)
 
 network_gen = {
     "densenet": gen_densenet_model,
@@ -91,7 +109,13 @@ network_gen = {
     "densenet_no_norm": gen_densenet_no_norm,
     "demo": gen_demo_network,
     "resnet": gen_resnet_model,
-    "resnet_scs": gen_resnet_scs
+    "resnet_scs": gen_resnet_scs,
+    "resnet_no_act": gen_resnet_no_act,
+    "resnet_no_norm": gen_resnet_no_norm,
+    "resnet_no_act_norm": gen_resnet_no_act_norm,
+    "resnet_no_act_norm_abs": gen_resnet_no_act_norm_abs_pool,
+    "resnet_scs_abs": gen_resnet_scs_abs,
+    "resnet_scs_abs_no_act": gen_resnet_scs_abs_no_act,
 }
 
 model_gen = network_gen.get(args.model)
@@ -190,6 +214,8 @@ for i_epoch in range(n_epochs):
 
     log('Epoch {} Train Loss {} Train Accuracy {} Test Loss {} Test Accuracy {}'.format(
         i_epoch, training_loss, training_accuracy, testing_loss, testing_accuracy), log_file)
+
+    torch.save(network.state_dict(), f"{path}_{i_epoch:04d}.pt")
 
 torch.save(network.state_dict(), path + '.pt')
 log_file.close()
