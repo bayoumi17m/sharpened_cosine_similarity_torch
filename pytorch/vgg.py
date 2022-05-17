@@ -126,7 +126,7 @@ def vgg():
     - relu activation
     - batch norm
     """
-    return VGG(make_layers(cfg['A'], batch_norm=True, use_relu=True), init_weights=True)
+    return VGG(make_layers(cfg['A'], batch_norm=True), init_weights=True)
 
 def vgg_scs_bn_act_do():
     """
