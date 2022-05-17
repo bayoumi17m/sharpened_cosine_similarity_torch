@@ -179,3 +179,11 @@ def vgg_scs_bn_act_abspool():
     - abs pooling
     """
     return VGGNoDropoutConv(make_scs_layers(cfg['A'], batch_norm=True, use_relu=True, abspool=True), init_weights=False)
+
+def vgg_scs_bn():
+    """
+    - SCS conv
+    - batch norm
+    - max pooling
+    """
+    return VGGNoDropoutConv(make_scs_layers(cfg['A'], batch_norm=True, use_relu=False, abspool=False), init_weights=False)
